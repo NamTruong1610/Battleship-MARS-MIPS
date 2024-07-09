@@ -1,0 +1,2510 @@
+.data
+	
+	HIT: .asciiz "\nHIT! \n"
+	PREDEFINED_SHIP: .asciiz "Predefined ship numbers and sizes:\n1 4x1 ships\n2 3x1 ships\n3 2x1 ships"
+	GETLINE: .asciiz "\n"
+	P1_INPUT_4x1: .asciiz "\nPlayer 1 input 4x1 ship coordinates: \n"
+	P1_INPUT_3x1_1: .asciiz "\nPlayer 1 input first 3x1 ship coordinates: \n"
+	P1_INPUT_3x1_2: .asciiz "\nPlayer 1 input second 3x1 ship coordinates: \n"
+	P1_INPUT_2x1_1: .asciiz "\nPlayer 1 input first 2x1 ship coordinates: \n"
+	P1_INPUT_2x1_2: .asciiz "\nPlayer 1 input second 2x1 ship coordinates: \n"
+	P1_INPUT_2x1_3: .asciiz "\nPlayer 1 input third 2x1 ship coordinates: \n"
+	P1_ATTACK: "\nPlayer 1 pick your attack coordinates: \n"
+	P1_WIN: "\nPlayer 1 won!\n"
+	P2_INPUT_4x1: .asciiz "\n\nPlayer 2 input 4x1 ship coordinates: \n"
+	P2_INPUT_3x1_1: .asciiz "\nPlayer 2 input first 3x1 ship coordinates: \n"
+	P2_INPUT_3x1_2: .asciiz "\nPlayer 2 input second 3x1 ship coordinates: \n"
+	P2_INPUT_2x1_1: .asciiz "\nPlayer 2 input first 2x1 ship coordinates: \n"
+	P2_INPUT_2x1_2: .asciiz "\nPlayer 2 input second 2x1 ship coordinates: \n"
+	P2_INPUT_2x1_3: .asciiz "\nPlayer 2 input third 2x1 ship coordinates: \n"
+	P2_ATTACK: "\nPlayer 2 pick your attack coordinates: \n"
+	P2_WIN: "\nPlayer 2 won!\n"
+	B1_ANNOUNCE: .asciiz "\nThis is board 1: \n"
+	B2_ANNOUNCE: .asciiz "\nThis is board 2: \n"
+	P2_BOARD: .byte '0','0','0','0','0','0','0'
+			'0','0','0','0','0','0','0'
+			'0','0','0','0','0','0','0'
+			'0','0','0','0','0','0','0'
+			'0','0','0','0','0','0','0'
+			'0','0','0','0','0','0','0'
+			'0','0','0','0','0','0','0'
+	P1_BOARD: .byte '0','0','0','0','0','0','0'
+			'0','0','0','0','0','0','0'
+			'0','0','0','0','0','0','0'
+			'0','0','0','0','0','0','0'
+			'0','0','0','0','0','0','0'
+			'0','0','0','0','0','0','0'
+			'0','0','0','0','0','0','0'
+
+.text
+
+	li $v0, 4
+	la $a0, PREDEFINED_SHIP
+	syscall
+	
+	# THIS IS THE INPUT FOR PLAYER 1 BOARD
+	
+	li $v0, 4
+	la $a0, B1_ANNOUNCE
+	syscall
+	la $s0, P1_BOARD
+	jal printBoard
+	TESTBORDERFOURONE:
+		li $v0, 4
+		la $a0, P1_INPUT_4x1
+		syscall
+		li $v0, 5
+		syscall
+		move $s0, $v0
+		slti $t0, $s0, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s0, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, TESTBORDERFOURONE
+		li $v0, 5
+		syscall
+		move $s1, $v0
+		slti $t0, $s1, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s1, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, TESTBORDERFOURONE
+		li $v0, 5
+		syscall
+		move $s2, $v0
+		slti $t0, $s2, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s2, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, TESTBORDERFOURONE
+		li $v0, 5
+		syscall
+		move $s3, $v0
+		slti $t0, $s3, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s3, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, TESTBORDERFOURONE
+		beq $s0, $s2, CHECKFOURONECOL
+		beq $s1, $s3, CHECKFOURONEROW
+		bne $s0, $s2, CHECKFOURONEDIAGONALCOL
+		bne $s1, $s3, CHECKFOURONEDIAGONALROW
+		CHECKFOURONEDIAGONALCOL:
+			bne $s1, $s3, TESTBORDERFOURONE
+		CHECKFOURONEDIAGONALROW:
+			bne $s0, $s2, TESTBORDERFOURONE
+	CHECKFOURONECOL:
+		addi $t0, $s1, -3
+		beq $t0, $s3, VALIDFOURONECHECKCOLANDROW
+		addi $t0, $s1, 3
+		beq $t0, $s3, VALIDFOURONECHECKCOLANDROW
+		j TESTBORDERFOURONE
+	CHECKFOURONEROW:
+		addi $t0, $s0, -3
+		beq $t0, $s2, VALIDFOURONECHECKCOLANDROW
+		addi $t0, $s0, 3
+		beq $t0, $s2, VALIDFOURONECHECKCOLANDROW
+		j TESTBORDERFOURONE
+	VALIDFOURONECHECKCOLANDROW:
+	
+	beq $s0, $s2, INPUTFOURONEHORIZONTAL
+	beq $s1, $s3, INPUTFOURONEVERTICAL
+	INPUTFOURONEHORIZONTAL:
+		slt $t0, $s1, $s3
+		beq $t0, 1, INPUTFOURONEHORIZONTALRIGHT
+		bne $t0, 1, INPUTFOURONEHORIZONTALLEFT
+		INPUTFOURONEHORIZONTALRIGHT:
+			la $t0, P1_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, 1
+			li $t3, '1'
+			add $t0, $t0, $t1
+			LOOPINPUTFOURONEHORIZONTALRIGHT:
+				beq $t1, $t2, QUITLOOPINPUTFOURONEHORIZONTALRIGHT
+				sb $t3, 0($t0)
+				addi $t1, $t1, 1
+				addi $t0, $t0, 1
+				j LOOPINPUTFOURONEHORIZONTALRIGHT
+			QUITLOOPINPUTFOURONEHORIZONTALRIGHT:
+			j QUITINPUTFOURONEHORIZONTAL
+		INPUTFOURONEHORIZONTALLEFT:
+			la $t0, P1_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, -1
+			li $t3, '1'
+			add $t0, $t0, $t1
+			LOOPINPUTFOURONEHORIZONTALLEFT:
+				beq $t1, $t2, QUITLOOPINPUTFOURONEHORIZONTALLEFT
+				sb $t3, 0($t0)
+				addi $t1, $t1, -1
+				addi $t0, $t0, -1
+				j LOOPINPUTFOURONEHORIZONTALLEFT
+			QUITLOOPINPUTFOURONEHORIZONTALLEFT:
+			j QUITINPUTFOURONEHORIZONTAL
+		QUITINPUTFOURONEHORIZONTAL:
+		j QUITINPUTFOURONE
+	INPUTFOURONEVERTICAL:
+		slt $t0, $s0, $s2
+		beq $t0, 1, INPUTFOURONEVERTICALDOWN
+		bne $t0, 1, INPUTFOURONEVERTICALUP
+		INPUTFOURONEVERTICALDOWN:
+			la $t0, P1_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, 7
+			li $t3, '1'
+			add $t0, $t0, $t1
+			LOOPINPUTFOURONEVERTICALDOWN:
+				beq $t1, $t2, QUITLOOPINPUTFOURONEVERTICALDOWN
+				sb $t3, 0($t0)
+				addi $t1, $t1, 7
+				addi $t0, $t0, 7
+				j LOOPINPUTFOURONEVERTICALDOWN
+			QUITLOOPINPUTFOURONEVERTICALDOWN:
+			j QUITINPUTFOURONEVERTICAL
+		INPUTFOURONEVERTICALUP:
+			la $t0, P1_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, -7
+			li $t3, '1'
+			add $t0, $t0, $t1
+			LOOPINPUTFOURONEVERTICALUP:
+				beq $t1, $t2, QUITLOOPINPUTFOURONEVERTICALUP
+				sb $t3, 0($t0)
+				addi $t1, $t1, -7
+				addi $t0, $t0, -7
+				j LOOPINPUTFOURONEVERTICALUP
+			QUITLOOPINPUTFOURONEVERTICALUP:
+			j QUITINPUTFOURONEVERTICAL
+		QUITINPUTFOURONEVERTICAL:
+		j QUITINPUTFOURONE
+	QUITINPUTFOURONE:
+	
+	la $s0, P1_BOARD
+	jal printBoard
+	
+	# THIS IS FIRST 3X1 SHIP
+	
+	TESTBORDERTHREEONEFIRST:
+		li $v0, 4
+		la $a0, P1_INPUT_3x1_1
+		syscall
+		li $v0, 5
+		syscall
+		move $s0, $v0
+		slti $t0, $s0, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s0, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, TESTBORDERTHREEONEFIRST
+		li $v0, 5
+		syscall
+		move $s1, $v0
+		slti $t0, $s1, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s1, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, TESTBORDERTHREEONEFIRST
+		li $v0, 5
+		syscall
+		move $s2, $v0
+		slti $t0, $s2, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s2, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, TESTBORDERTHREEONEFIRST
+		li $v0, 5
+		syscall
+		move $s3, $v0
+		slti $t0, $s3, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s3, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, TESTBORDERTHREEONEFIRST
+		beq $s0, $s2, CHECKTHREEONEFIRSTCOL
+		beq $s1, $s3, CHECKTHREEONEFIRSTROW
+		bne $s0, $s2, CHECKTHREEONEFIRSTDIAGONALCOL
+		bne $s1, $s3, CHECKTHREEONEFIRSTDIAGONALROW
+		CHECKTHREEONEFIRSTDIAGONALCOL:
+			bne $s1, $s3, TESTBORDERTHREEONEFIRST
+		CHECKTHREEONEFIRSTDIAGONALROW:
+			bne $s0, $s2, TESTBORDERTHREEONEFIRST
+	CHECKTHREEONEFIRSTCOL:
+		addi $t0, $s1, -2
+		beq $t0, $s3, VALIDTHREEONEFIRSTCHECKCOLANDROW
+		addi $t0, $s1, 2
+		beq $t0, $s3, VALIDTHREEONEFIRSTCHECKCOLANDROW
+		j TESTBORDERTHREEONEFIRST
+	CHECKTHREEONEFIRSTROW:
+		addi $t0, $s0, -2
+		beq $t0, $s2, VALIDTHREEONEFIRSTCHECKCOLANDROW
+		addi $t0, $s0, 2
+		beq $t0, $s2, VALIDTHREEONEFIRSTCHECKCOLANDROW
+		j TESTBORDERTHREEONEFIRST
+	VALIDTHREEONEFIRSTCHECKCOLANDROW:
+	
+	beq $s0, $s2, INPUTTHREEONEFIRSTHORIZONTAL
+	beq $s1, $s3, INPUTTHREEONEFIRSTVERTICAL
+	INPUTTHREEONEFIRSTHORIZONTAL:
+		slt $t0, $s1, $s3
+		beq $t0, 1, INPUTTHREEONEFIRSTHORIZONTALRIGHT
+		bne $t0, 1, INPUTTHREEONEFIRSTHORIZONTALLEFT
+		INPUTTHREEONEFIRSTHORIZONTALRIGHT:
+			la $t0, P1_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, 1
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)
+			beq $t5, '1', TESTBORDERTHREEONEFIRST
+			bne $t5, '1', THREEONEFIRSTELEMENTSECONDRIGHT
+			THREEONEFIRSTELEMENTSECONDRIGHT:
+				addi $t4, $t4, 1
+				lb $t5, 0($t4)
+				beq $t5, '1', TESTBORDERTHREEONEFIRST
+				bne $t5, '1', THREEONEFIRSTELEMENTTHIRDRIGHT
+				THREEONEFIRSTELEMENTTHIRDRIGHT:
+					addi $t4, $t4, 1
+					lb $t5, 0($t4)
+					beq $t5, '1', TESTBORDERTHREEONEFIRST
+					bne $t5, '1', LOOPINPUTTHREEONEFIRSTHORIZONTALRIGHT
+					
+			LOOPINPUTTHREEONEFIRSTHORIZONTALRIGHT:
+				beq $t1, $t2, QUITLOOPINPUTTHREEONEFIRSTHORIZONTALRIGHT
+				sb $t3, 0($t0)
+				addi $t1, $t1, 1
+				addi $t0, $t0, 1
+				j LOOPINPUTTHREEONEFIRSTHORIZONTALRIGHT
+			QUITLOOPINPUTTHREEONEFIRSTHORIZONTALRIGHT:
+			j QUITINPUTTHREEONEFIRSTHORIZONTAL
+		INPUTTHREEONEFIRSTHORIZONTALLEFT:
+			la $t0, P1_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, -1
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)
+			beq $t5, '1', TESTBORDERTHREEONEFIRST
+			bne $t5, '1', THREEONEFIRSTELEMENTSECONDLEFT
+			THREEONEFIRSTELEMENTSECONDLEFT:
+				addi $t4, $t4, -1
+				lb $t5, 0($t4)
+				beq $t5, '1', TESTBORDERTHREEONEFIRST
+				bne $t5, '1', THREEONEFIRSTELEMENTTHIRDLEFT
+				THREEONEFIRSTELEMENTTHIRDLEFT:
+					addi $t4, $t4, -1
+					lb $t5, 0($t4)
+					beq $t5, '1', TESTBORDERTHREEONEFIRST
+					bne $t5, '1', LOOPINPUTTHREEONEFIRSTHORIZONTALLEFT
+			
+			LOOPINPUTTHREEONEFIRSTHORIZONTALLEFT:
+				beq $t1, $t2, QUITLOOPINPUTTHREEONEFIRSTHORIZONTALLEFT
+				sb $t3, 0($t0)
+				addi $t1, $t1, -1
+				addi $t0, $t0, -1
+				j LOOPINPUTTHREEONEFIRSTHORIZONTALLEFT
+			QUITLOOPINPUTTHREEONEFIRSTHORIZONTALLEFT:
+			j QUITINPUTTHREEONEFIRSTHORIZONTAL
+		QUITINPUTTHREEONEFIRSTHORIZONTAL:
+		j QUITINPUTTHREEONEFIRST
+	INPUTTHREEONEFIRSTVERTICAL:
+		slt $t0, $s0, $s2
+		beq $t0, 1, INPUTTHREEONEFIRSTVERTICALDOWN
+		bne $t0, 1, INPUTTHREEONEFIRSTVERTICALUP
+		INPUTTHREEONEFIRSTVERTICALDOWN:
+			la $t0, P1_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, 7
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)			
+			beq $t5, '1', TESTBORDERTHREEONEFIRST
+			bne $t5, '1', THREEONEFIRSTELEMENTSECONDDOWN
+			THREEONEFIRSTELEMENTSECONDDOWN:
+				addi $t4, $t4, 7
+				lb $t5, 0($t4)
+				beq $t5, '1', TESTBORDERTHREEONEFIRST
+				bne $t5, '1', THREEONEFIRSTELEMENTTHIRDDOWN
+				THREEONEFIRSTELEMENTTHIRDDOWN:
+					addi $t4, $t4, 7
+					lb $t5, 0($t4)
+					beq $t5, '1', TESTBORDERTHREEONEFIRST
+					bne $t5, '1', LOOPINPUTTHREEONEFIRSTVERTICALDOWN
+			
+			LOOPINPUTTHREEONEFIRSTVERTICALDOWN:
+				beq $t1, $t2, QUITLOOPINPUTTHREEONEFIRSTVERTICALDOWN
+				sb $t3, 0($t0)
+				addi $t1, $t1, 7
+				addi $t0, $t0, 7
+				j LOOPINPUTTHREEONEFIRSTVERTICALDOWN
+			QUITLOOPINPUTTHREEONEFIRSTVERTICALDOWN:
+			j QUITINPUTTHREEONEFIRSTVERTICAL
+		INPUTTHREEONEFIRSTVERTICALUP:
+			la $t0, P1_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, -7
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)
+			beq $t5, '1', TESTBORDERTHREEONEFIRST
+			bne $t5, '1', THREEONEFIRSTELEMENTSECONDUP
+			THREEONEFIRSTELEMENTSECONDUP:
+				addi $t4, $t4, -7
+				lb $t5, 0($t4)
+				beq $t5, '1', TESTBORDERTHREEONEFIRST
+				bne $t5, '1', THREEONEFIRSTELEMENTTHIRDUP
+				THREEONEFIRSTELEMENTTHIRDUP:
+					addi $t4, $t4, -7
+					lb $t5, 0($t4)
+					beq $t5, '1', TESTBORDERTHREEONEFIRST
+					bne $t5, '1', LOOPINPUTTHREEONEFIRSTVERTICALUP
+			
+			LOOPINPUTTHREEONEFIRSTVERTICALUP:
+				beq $t1, $t2, QUITLOOPINPUTTHREEONEFIRSTVERTICALUP
+				sb $t3, 0($t0)
+				addi $t1, $t1, -7
+				addi $t0, $t0, -7
+				j LOOPINPUTTHREEONEFIRSTVERTICALUP
+			QUITLOOPINPUTTHREEONEFIRSTVERTICALUP:
+			j QUITINPUTTHREEONEFIRSTVERTICAL
+		QUITINPUTTHREEONEFIRSTVERTICAL:
+		j QUITINPUTTHREEONEFIRST
+	QUITINPUTTHREEONEFIRST:
+	
+	la $s0, P1_BOARD
+	jal printBoard
+	
+	# THIS IS SECOND 3X1 SHIP
+	
+	TESTBORDERTHREEONESECOND:
+		li $v0, 4
+		la $a0, P1_INPUT_3x1_2
+		syscall
+		li $v0, 5
+		syscall
+		move $s0, $v0
+		slti $t0, $s0, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s0, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, TESTBORDERTHREEONESECOND
+		li $v0, 5
+		syscall
+		move $s1, $v0
+		slti $t0, $s1, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s1, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, TESTBORDERTHREEONESECOND
+		li $v0, 5
+		syscall
+		move $s2, $v0
+		slti $t0, $s2, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s2, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, TESTBORDERTHREEONESECOND
+		li $v0, 5
+		syscall
+		move $s3, $v0
+		slti $t0, $s3, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s3, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, TESTBORDERTHREEONESECOND
+		beq $s0, $s2, CHECKTHREEONESECONDCOL
+		beq $s1, $s3, CHECKTHREEONESECONDROW
+		bne $s0, $s2, CHECKTHREEONESECONDDIAGONALCOL
+		bne $s1, $s3, CHECKTHREEONESECONDDIAGONALROW
+		CHECKTHREEONESECONDDIAGONALCOL:
+			bne $s1, $s3, TESTBORDERTHREEONESECOND
+		CHECKTHREEONESECONDDIAGONALROW:
+			bne $s0, $s2, TESTBORDERTHREEONESECOND
+	CHECKTHREEONESECONDCOL:
+		addi $t0, $s1, -2
+		beq $t0, $s3, VALIDTHREEONESECONDCHECKCOLANDROW
+		addi $t0, $s1, 2
+		beq $t0, $s3, VALIDTHREEONESECONDCHECKCOLANDROW
+		j TESTBORDERTHREEONESECOND
+	CHECKTHREEONESECONDROW:
+		addi $t0, $s0, -2
+		beq $t0, $s2, VALIDTHREEONESECONDCHECKCOLANDROW
+		addi $t0, $s0, 2
+		beq $t0, $s2, VALIDTHREEONESECONDCHECKCOLANDROW
+		j TESTBORDERTHREEONESECOND
+	VALIDTHREEONESECONDCHECKCOLANDROW:
+	
+	beq $s0, $s2, INPUTTHREEONESECONDHORIZONTAL
+	beq $s1, $s3, INPUTTHREEONESECONDVERTICAL
+	INPUTTHREEONESECONDHORIZONTAL:
+		slt $t0, $s1, $s3
+		beq $t0, 1, INPUTTHREEONESECONDHORIZONTALRIGHT
+		bne $t0, 1, INPUTTHREEONESECONDHORIZONTALLEFT
+		INPUTTHREEONESECONDHORIZONTALRIGHT:
+			la $t0, P1_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, 1
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)
+			beq $t5, '1', TESTBORDERTHREEONESECOND
+			bne $t5, '1', THREEONESECONDELEMENTSECONDRIGHT
+			THREEONESECONDELEMENTSECONDRIGHT:
+				addi $t4, $t4, 1
+				lb $t5, 0($t4)
+				beq $t5, '1', TESTBORDERTHREEONESECOND
+				bne $t5, '1', THREEONESECONDELEMENTTHIRDRIGHT
+				THREEONESECONDELEMENTTHIRDRIGHT:
+					addi $t4, $t4, 1
+					lb $t5, 0($t4)
+					beq $t5, '1', TESTBORDERTHREEONESECOND
+					bne $t5, '1', LOOPINPUTTHREEONESECONDHORIZONTALRIGHT
+					
+			LOOPINPUTTHREEONESECONDHORIZONTALRIGHT:
+				beq $t1, $t2, QUITLOOPINPUTTHREEONESECONDHORIZONTALRIGHT
+				sb $t3, 0($t0)
+				addi $t1, $t1, 1
+				addi $t0, $t0, 1
+				j LOOPINPUTTHREEONESECONDHORIZONTALRIGHT
+			QUITLOOPINPUTTHREEONESECONDHORIZONTALRIGHT:
+			j QUITINPUTTHREEONESECONDHORIZONTAL
+		INPUTTHREEONESECONDHORIZONTALLEFT:
+			la $t0, P1_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, -1
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)
+			beq $t5, '1', TESTBORDERTHREEONESECOND
+			bne $t5, '1', THREEONESECONDELEMENTSECONDLEFT
+			THREEONESECONDELEMENTSECONDLEFT:
+				addi $t4, $t4, -1
+				lb $t5, 0($t4)
+				beq $t5, '1', TESTBORDERTHREEONESECOND
+				bne $t5, '1', THREEONESECONDELEMENTTHIRDLEFT
+				THREEONESECONDELEMENTTHIRDLEFT:
+					addi $t4, $t4, -1
+					lb $t5, 0($t4)
+					beq $t5, '1', TESTBORDERTHREEONESECOND
+					bne $t5, '1', LOOPINPUTTHREEONESECONDHORIZONTALLEFT
+			
+			LOOPINPUTTHREEONESECONDHORIZONTALLEFT:
+				beq $t1, $t2, QUITLOOPINPUTTHREEONESECONDHORIZONTALLEFT
+				sb $t3, 0($t0)
+				addi $t1, $t1, -1
+				addi $t0, $t0, -1
+				j LOOPINPUTTHREEONESECONDHORIZONTALLEFT
+			QUITLOOPINPUTTHREEONESECONDHORIZONTALLEFT:
+			j QUITINPUTTHREEONESECONDHORIZONTAL
+		QUITINPUTTHREEONESECONDHORIZONTAL:
+		j QUITINPUTTHREEONESECOND
+	INPUTTHREEONESECONDVERTICAL:
+		slt $t0, $s0, $s2
+		beq $t0, 1, INPUTTHREEONESECONDVERTICALDOWN
+		bne $t0, 1, INPUTTHREEONESECONDVERTICALUP
+		INPUTTHREEONESECONDVERTICALDOWN:
+			la $t0, P1_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, 7
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)			
+			beq $t5, '1', TESTBORDERTHREEONESECOND
+			bne $t5, '1', THREEONESECONDELEMENTSECONDDOWN
+			THREEONESECONDELEMENTSECONDDOWN:
+				addi $t4, $t4, 7
+				lb $t5, 0($t4)
+				beq $t5, '1', TESTBORDERTHREEONESECOND
+				bne $t5, '1', THREEONESECONDELEMENTTHIRDDOWN
+				THREEONESECONDELEMENTTHIRDDOWN:
+					addi $t4, $t4, 7
+					lb $t5, 0($t4)
+					beq $t5, '1', TESTBORDERTHREEONESECOND
+					bne $t5, '1', LOOPINPUTTHREEONESECONDVERTICALDOWN
+			
+			LOOPINPUTTHREEONESECONDVERTICALDOWN:
+				beq $t1, $t2, QUITLOOPINPUTTHREEONESECONDVERTICALDOWN
+				sb $t3, 0($t0)
+				addi $t1, $t1, 7
+				addi $t0, $t0, 7
+				j LOOPINPUTTHREEONESECONDVERTICALDOWN
+			QUITLOOPINPUTTHREEONESECONDVERTICALDOWN:
+			j QUITINPUTTHREEONESECONDVERTICAL
+		INPUTTHREEONESECONDVERTICALUP:
+			la $t0, P1_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, -7
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)
+			beq $t5, '1', TESTBORDERTHREEONESECOND
+			bne $t5, '1', THREEONESECONDELEMENTSECONDUP
+			THREEONESECONDELEMENTSECONDUP:
+				addi $t4, $t4, -7
+				lb $t5, 0($t4)
+				beq $t5, '1', TESTBORDERTHREEONESECOND
+				bne $t5, '1', THREEONESECONDELEMENTTHIRDUP
+				THREEONESECONDELEMENTTHIRDUP:
+					addi $t4, $t4, -7
+					lb $t5, 0($t4)
+					beq $t5, '1', TESTBORDERTHREEONESECOND
+					bne $t5, '1', LOOPINPUTTHREEONESECONDVERTICALUP
+			
+			LOOPINPUTTHREEONESECONDVERTICALUP:
+				beq $t1, $t2, QUITLOOPINPUTTHREEONESECONDVERTICALUP
+				sb $t3, 0($t0)
+				addi $t1, $t1, -7
+				addi $t0, $t0, -7
+				j LOOPINPUTTHREEONESECONDVERTICALUP
+			QUITLOOPINPUTTHREEONESECONDVERTICALUP:
+			j QUITINPUTTHREEONESECONDVERTICAL
+		QUITINPUTTHREEONESECONDVERTICAL:
+		j QUITINPUTTHREEONESECOND
+	QUITINPUTTHREEONESECOND:
+	
+	la $s0, P1_BOARD
+	jal printBoard
+	
+	# THIS IS THE FIRST 2X1 SHIP
+	
+	TESTBORDERTWOONEFIRST:
+		li $v0, 4
+		la $a0, P1_INPUT_2x1_1
+		syscall
+		li $v0, 5
+		syscall
+		move $s0, $v0
+		slti $t0, $s0, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s0, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, TESTBORDERTWOONEFIRST
+		li $v0, 5
+		syscall
+		move $s1, $v0
+		slti $t0, $s1, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s1, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, TESTBORDERTWOONEFIRST
+		li $v0, 5
+		syscall
+		move $s2, $v0
+		slti $t0, $s2, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s2, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, TESTBORDERTWOONEFIRST
+		li $v0, 5
+		syscall
+		move $s3, $v0
+		slti $t0, $s3, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s3, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, TESTBORDERTWOONEFIRST
+		beq $s0, $s2, CHECKTWOONEFIRSTCOL
+		beq $s1, $s3, CHECKTWOONEFIRSTROW
+		bne $s0, $s2, CHECKTWOONEFIRSTDIAGONALCOL
+		bne $s1, $s3, CHECKTWOONEFIRSTDIAGONALROW
+		CHECKTWOONEFIRSTDIAGONALCOL:
+			bne $s1, $s3, TESTBORDERTWOONEFIRST
+		CHECKTWOONEFIRSTDIAGONALROW:
+			bne $s0, $s2, TESTBORDERTWOONEFIRST
+	CHECKTWOONEFIRSTCOL:
+		addi $t0, $s1, -1
+		beq $t0, $s3, VALIDTWOONEFIRSTCHECKCOLANDROW
+		addi $t0, $s1, 1
+		beq $t0, $s3, VALIDTWOONEFIRSTCHECKCOLANDROW
+		j TESTBORDERTWOONEFIRST
+	CHECKTWOONEFIRSTROW:
+		addi $t0, $s0, -1
+		beq $t0, $s2, VALIDTWOONEFIRSTCHECKCOLANDROW
+		addi $t0, $s0, 1
+		beq $t0, $s2, VALIDTWOONEFIRSTCHECKCOLANDROW
+		j TESTBORDERTWOONEFIRST
+	VALIDTWOONEFIRSTCHECKCOLANDROW:
+	
+	beq $s0, $s2, INPUTTWOONEFIRSTHORIZONTAL
+	beq $s1, $s3, INPUTTWOONEFIRSTVERTICAL
+	INPUTTWOONEFIRSTHORIZONTAL:
+		slt $t0, $s1, $s3
+		beq $t0, 1, INPUTTWOONEFIRSTHORIZONTALRIGHT
+		bne $t0, 1, INPUTTWOONEFIRSTHORIZONTALLEFT
+		INPUTTWOONEFIRSTHORIZONTALRIGHT:
+			la $t0, P1_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, 1
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)
+			beq $t5, '1', TESTBORDERTWOONEFIRST
+			bne $t5, '1', TWOONEFIRSTELEMENTSECONDRIGHT
+			TWOONEFIRSTELEMENTSECONDRIGHT:
+				addi $t4, $t4, 1
+				lb $t5, 0($t4)
+				beq $t5, '1', TESTBORDERTWOONEFIRST
+				bne $t5, '1', LOOPINPUTTWOONEFIRSTHORIZONTALRIGHT
+					
+			LOOPINPUTTWOONEFIRSTHORIZONTALRIGHT:
+				beq $t1, $t2, QUITLOOPINPUTTWOONEFIRSTHORIZONTALRIGHT
+				sb $t3, 0($t0)
+				addi $t1, $t1, 1
+				addi $t0, $t0, 1
+				j LOOPINPUTTWOONEFIRSTHORIZONTALRIGHT
+			QUITLOOPINPUTTWOONEFIRSTHORIZONTALRIGHT:
+			j QUITINPUTTWOONEFIRSTHORIZONTAL
+		INPUTTWOONEFIRSTHORIZONTALLEFT:
+			la $t0, P1_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, -1
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)
+			beq $t5, '1', TESTBORDERTWOONEFIRST
+			bne $t5, '1', TWOONEFIRSTELEMENTSECONDLEFT
+			TWOONEFIRSTELEMENTSECONDLEFT:
+				addi $t4, $t4, -1
+				lb $t5, 0($t4)
+				beq $t5, '1', TESTBORDERTWOONEFIRST
+				bne $t5, '1', LOOPINPUTTWOONEFIRSTHORIZONTALLEFT
+			
+			LOOPINPUTTWOONEFIRSTHORIZONTALLEFT:
+				beq $t1, $t2, QUITLOOPINPUTTWOONEFIRSTHORIZONTALLEFT
+				sb $t3, 0($t0)
+				addi $t1, $t1, -1
+				addi $t0, $t0, -1
+				j LOOPINPUTTWOONEFIRSTHORIZONTALLEFT
+			QUITLOOPINPUTTWOONEFIRSTHORIZONTALLEFT:
+			j QUITINPUTTWOONEFIRSTHORIZONTAL
+		QUITINPUTTWOONEFIRSTHORIZONTAL:
+		j QUITINPUTTWOONEFIRST
+	INPUTTWOONEFIRSTVERTICAL:
+		slt $t0, $s0, $s2
+		beq $t0, 1, INPUTTWOONEFIRSTVERTICALDOWN
+		bne $t0, 1, INPUTTWOONEFIRSTVERTICALUP
+		INPUTTWOONEFIRSTVERTICALDOWN:
+			la $t0, P1_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, 7
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)			
+			beq $t5, '1', TESTBORDERTWOONEFIRST
+			bne $t5, '1', TWOONEFIRSTELEMENTSECONDDOWN
+			TWOONEFIRSTELEMENTSECONDDOWN:
+				addi $t4, $t4, 7
+				lb $t5, 0($t4)
+				beq $t5, '1', TESTBORDERTWOONEFIRST
+				bne $t5, '1', LOOPINPUTTWOONEFIRSTVERTICALDOWN
+			
+			LOOPINPUTTWOONEFIRSTVERTICALDOWN:
+				beq $t1, $t2, QUITLOOPINPUTTWOONEFIRSTVERTICALDOWN
+				sb $t3, 0($t0)
+				addi $t1, $t1, 7
+				addi $t0, $t0, 7
+				j LOOPINPUTTWOONEFIRSTVERTICALDOWN
+			QUITLOOPINPUTTWOONEFIRSTVERTICALDOWN:
+			j QUITINPUTTWOONEFIRSTVERTICAL
+		INPUTTWOONEFIRSTVERTICALUP:
+			la $t0, P1_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, -7
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)
+			beq $t5, '1', TESTBORDERTWOONEFIRST
+			bne $t5, '1', TWOONEFIRSTELEMENTSECONDUP
+			TWOONEFIRSTELEMENTSECONDUP:
+				addi $t4, $t4, -7
+				lb $t5, 0($t4)
+				beq $t5, '1', TESTBORDERTWOONEFIRST
+				bne $t5, '1', LOOPINPUTTWOONEFIRSTVERTICALUP
+			
+			LOOPINPUTTWOONEFIRSTVERTICALUP:
+				beq $t1, $t2, QUITLOOPINPUTTWOONEFIRSTVERTICALUP
+				sb $t3, 0($t0)
+				addi $t1, $t1, -7
+				addi $t0, $t0, -7
+				j LOOPINPUTTWOONEFIRSTVERTICALUP
+			QUITLOOPINPUTTWOONEFIRSTVERTICALUP:
+			j QUITINPUTTWOONEFIRSTVERTICAL
+		QUITINPUTTWOONEFIRSTVERTICAL:
+		j QUITINPUTTWOONEFIRST
+	QUITINPUTTWOONEFIRST:
+	
+	la $s0, P1_BOARD
+	jal printBoard
+			
+	# THIS IS THE SECOND 2X1 SHIP
+	
+	TESTBORDERTWOONESECOND:
+		li $v0, 4
+		la $a0, P1_INPUT_2x1_2
+		syscall
+		li $v0, 5
+		syscall
+		move $s0, $v0
+		slti $t0, $s0, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s0, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, TESTBORDERTWOONESECOND
+		li $v0, 5
+		syscall
+		move $s1, $v0
+		slti $t0, $s1, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s1, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, TESTBORDERTWOONESECOND
+		li $v0, 5
+		syscall
+		move $s2, $v0
+		slti $t0, $s2, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s2, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, TESTBORDERTWOONESECOND
+		li $v0, 5
+		syscall
+		move $s3, $v0
+		slti $t0, $s3, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s3, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, TESTBORDERTWOONESECOND
+		beq $s0, $s2, CHECKTWOONESECONDCOL
+		beq $s1, $s3, CHECKTWOONESECONDROW
+		bne $s0, $s2, CHECKTWOONESECONDDIAGONALCOL
+		bne $s1, $s3, CHECKTWOONESECONDDIAGONALROW
+		CHECKTWOONESECONDDIAGONALCOL:
+			bne $s1, $s3, TESTBORDERTWOONESECOND
+		CHECKTWOONESECONDDIAGONALROW:
+			bne $s0, $s2, TESTBORDERTWOONESECOND
+	CHECKTWOONESECONDCOL:
+		addi $t0, $s1, -1
+		beq $t0, $s3, VALIDTWOONESECONDCHECKCOLANDROW
+		addi $t0, $s1, 1
+		beq $t0, $s3, VALIDTWOONESECONDCHECKCOLANDROW
+		j TESTBORDERTWOONESECOND
+	CHECKTWOONESECONDROW:
+		addi $t0, $s0, -1
+		beq $t0, $s2, VALIDTWOONESECONDCHECKCOLANDROW
+		addi $t0, $s0, 1
+		beq $t0, $s2, VALIDTWOONESECONDCHECKCOLANDROW
+		j TESTBORDERTWOONESECOND
+	VALIDTWOONESECONDCHECKCOLANDROW:
+	
+	beq $s0, $s2, INPUTTWOONESECONDHORIZONTAL
+	beq $s1, $s3, INPUTTWOONESECONDVERTICAL
+	INPUTTWOONESECONDHORIZONTAL:
+		slt $t0, $s1, $s3
+		beq $t0, 1, INPUTTWOONESECONDHORIZONTALRIGHT
+		bne $t0, 1, INPUTTWOONESECONDHORIZONTALLEFT
+		INPUTTWOONESECONDHORIZONTALRIGHT:
+			la $t0, P1_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, 1
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)
+			beq $t5, '1', TESTBORDERTWOONESECOND
+			bne $t5, '1', TWOONESECONDELEMENTSECONDRIGHT
+			TWOONESECONDELEMENTSECONDRIGHT:
+				addi $t4, $t4, 1
+				lb $t5, 0($t4)
+				beq $t5, '1', TESTBORDERTWOONESECOND
+				bne $t5, '1', LOOPINPUTTWOONESECONDHORIZONTALRIGHT
+					
+			LOOPINPUTTWOONESECONDHORIZONTALRIGHT:
+				beq $t1, $t2, QUITLOOPINPUTTWOONESECONDHORIZONTALRIGHT
+				sb $t3, 0($t0)
+				addi $t1, $t1, 1
+				addi $t0, $t0, 1
+				j LOOPINPUTTWOONESECONDHORIZONTALRIGHT
+			QUITLOOPINPUTTWOONESECONDHORIZONTALRIGHT:
+			j QUITINPUTTWOONESECONDHORIZONTAL
+		INPUTTWOONESECONDHORIZONTALLEFT:
+			la $t0, P1_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, -1
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)
+			beq $t5, '1', TESTBORDERTWOONESECOND
+			bne $t5, '1', TWOONESECONDELEMENTSECONDLEFT
+			TWOONESECONDELEMENTSECONDLEFT:
+				addi $t4, $t4, -1
+				lb $t5, 0($t4)
+				beq $t5, '1', TESTBORDERTWOONESECOND
+				bne $t5, '1', LOOPINPUTTWOONESECONDHORIZONTALLEFT
+			
+			LOOPINPUTTWOONESECONDHORIZONTALLEFT:
+				beq $t1, $t2, QUITLOOPINPUTTWOONESECONDHORIZONTALLEFT
+				sb $t3, 0($t0)
+				addi $t1, $t1, -1
+				addi $t0, $t0, -1
+				j LOOPINPUTTWOONESECONDHORIZONTALLEFT
+			QUITLOOPINPUTTWOONESECONDHORIZONTALLEFT:
+			j QUITINPUTTWOONESECONDHORIZONTAL
+		QUITINPUTTWOONESECONDHORIZONTAL:
+		j QUITINPUTTWOONESECOND
+	INPUTTWOONESECONDVERTICAL:
+		slt $t0, $s0, $s2
+		beq $t0, 1, INPUTTWOONESECONDVERTICALDOWN
+		bne $t0, 1, INPUTTWOONESECONDVERTICALUP
+		INPUTTWOONESECONDVERTICALDOWN:
+			la $t0, P1_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, 7
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)			
+			beq $t5, '1', TESTBORDERTWOONESECOND
+			bne $t5, '1', TWOONESECONDELEMENTSECONDDOWN
+			TWOONESECONDELEMENTSECONDDOWN:
+				addi $t4, $t4, 7
+				lb $t5, 0($t4)
+				beq $t5, '1', TESTBORDERTWOONESECOND
+				bne $t5, '1', LOOPINPUTTWOONESECONDVERTICALDOWN
+			
+			LOOPINPUTTWOONESECONDVERTICALDOWN:
+				beq $t1, $t2, QUITLOOPINPUTTWOONESECONDVERTICALDOWN
+				sb $t3, 0($t0)
+				addi $t1, $t1, 7
+				addi $t0, $t0, 7
+				j LOOPINPUTTWOONESECONDVERTICALDOWN
+			QUITLOOPINPUTTWOONESECONDVERTICALDOWN:
+			j QUITINPUTTWOONESECONDVERTICAL
+		INPUTTWOONESECONDVERTICALUP:
+			la $t0, P1_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, -7
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)
+			beq $t5, '1', TESTBORDERTWOONESECOND
+			bne $t5, '1', TWOONESECONDELEMENTSECONDUP
+			TWOONESECONDELEMENTSECONDUP:
+				addi $t4, $t4, -7
+				lb $t5, 0($t4)
+				beq $t5, '1', TESTBORDERTWOONESECOND
+				bne $t5, '1', LOOPINPUTTWOONESECONDVERTICALUP
+			
+			LOOPINPUTTWOONESECONDVERTICALUP:
+				beq $t1, $t2, QUITLOOPINPUTTWOONESECONDVERTICALUP
+				sb $t3, 0($t0)
+				addi $t1, $t1, -7
+				addi $t0, $t0, -7
+				j LOOPINPUTTWOONESECONDVERTICALUP
+			QUITLOOPINPUTTWOONESECONDVERTICALUP:
+			j QUITINPUTTWOONESECONDVERTICAL
+		QUITINPUTTWOONESECONDVERTICAL:
+		j QUITINPUTTWOONESECOND
+	QUITINPUTTWOONESECOND:
+	
+	la $s0, P1_BOARD
+	jal printBoard	
+		
+	# THIS IS THE THIRD 2X1 SHIP
+	
+	TESTBORDERTWOONETHIRD:
+		li $v0, 4
+		la $a0, P1_INPUT_2x1_3
+		syscall
+		li $v0, 5
+		syscall
+		move $s0, $v0
+		slti $t0, $s0, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s0, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, TESTBORDERTWOONETHIRD
+		li $v0, 5
+		syscall
+		move $s1, $v0
+		slti $t0, $s1, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s1, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, TESTBORDERTWOONETHIRD
+		li $v0, 5
+		syscall
+		move $s2, $v0
+		slti $t0, $s2, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s2, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, TESTBORDERTWOONETHIRD
+		li $v0, 5
+		syscall
+		move $s3, $v0
+		slti $t0, $s3, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s3, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, TESTBORDERTWOONETHIRD
+		beq $s0, $s2, CHECKTWOONETHIRDCOL
+		beq $s1, $s3, CHECKTWOONETHIRDROW
+		bne $s0, $s2, CHECKTWOONETHIRDDIAGONALCOL
+		bne $s1, $s3, CHECKTWOONETHIRDDIAGONALROW
+		CHECKTWOONETHIRDDIAGONALCOL:
+			bne $s1, $s3, TESTBORDERTWOONETHIRD
+		CHECKTWOONETHIRDDIAGONALROW:
+			bne $s0, $s2, TESTBORDERTWOONETHIRD
+	CHECKTWOONETHIRDCOL:
+		addi $t0, $s1, -1
+		beq $t0, $s3, VALIDTWOONETHIRDCHECKCOLANDROW
+		addi $t0, $s1, 1
+		beq $t0, $s3, VALIDTWOONETHIRDCHECKCOLANDROW
+		j TESTBORDERTWOONETHIRD
+	CHECKTWOONETHIRDROW:
+		addi $t0, $s0, -1
+		beq $t0, $s2, VALIDTWOONETHIRDCHECKCOLANDROW
+		addi $t0, $s0, 1
+		beq $t0, $s2, VALIDTWOONETHIRDCHECKCOLANDROW
+		j TESTBORDERTWOONETHIRD
+	VALIDTWOONETHIRDCHECKCOLANDROW:
+	
+	beq $s0, $s2, INPUTTWOONETHIRDHORIZONTAL
+	beq $s1, $s3, INPUTTWOONETHIRDVERTICAL
+	INPUTTWOONETHIRDHORIZONTAL:
+		slt $t0, $s1, $s3
+		beq $t0, 1, INPUTTWOONETHIRDHORIZONTALRIGHT
+		bne $t0, 1, INPUTTWOONETHIRDHORIZONTALLEFT
+		INPUTTWOONETHIRDHORIZONTALRIGHT:
+			la $t0, P1_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, 1
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)
+			beq $t5, '1', TESTBORDERTWOONETHIRD
+			bne $t5, '1', TWOONETHIRDELEMENTSECONDRIGHT
+			TWOONETHIRDELEMENTSECONDRIGHT:
+				addi $t4, $t4, 1
+				lb $t5, 0($t4)
+				beq $t5, '1', TESTBORDERTWOONETHIRD
+				bne $t5, '1', LOOPINPUTTWOONETHIRDHORIZONTALRIGHT
+					
+			LOOPINPUTTWOONETHIRDHORIZONTALRIGHT:
+				beq $t1, $t2, QUITLOOPINPUTTWOONETHIRDHORIZONTALRIGHT
+				sb $t3, 0($t0)
+				addi $t1, $t1, 1
+				addi $t0, $t0, 1
+				j LOOPINPUTTWOONETHIRDHORIZONTALRIGHT
+			QUITLOOPINPUTTWOONETHIRDHORIZONTALRIGHT:
+			j QUITINPUTTWOONETHIRDHORIZONTAL
+		INPUTTWOONETHIRDHORIZONTALLEFT:
+			la $t0, P1_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, -1
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)
+			beq $t5, '1', TESTBORDERTWOONETHIRD
+			bne $t5, '1', TWOONETHIRDELEMENTSECONDLEFT
+			TWOONETHIRDELEMENTSECONDLEFT:
+				addi $t4, $t4, -1
+				lb $t5, 0($t4)
+				beq $t5, '1', TESTBORDERTWOONETHIRD
+				bne $t5, '1', LOOPINPUTTWOONETHIRDHORIZONTALLEFT
+			
+			LOOPINPUTTWOONETHIRDHORIZONTALLEFT:
+				beq $t1, $t2, QUITLOOPINPUTTWOONETHIRDHORIZONTALLEFT
+				sb $t3, 0($t0)
+				addi $t1, $t1, -1
+				addi $t0, $t0, -1
+				j LOOPINPUTTWOONETHIRDHORIZONTALLEFT
+			QUITLOOPINPUTTWOONETHIRDHORIZONTALLEFT:
+			j QUITINPUTTWOONETHIRDHORIZONTAL
+		QUITINPUTTWOONETHIRDHORIZONTAL:
+		j QUITINPUTTWOONETHIRD
+	INPUTTWOONETHIRDVERTICAL:
+		slt $t0, $s0, $s2
+		beq $t0, 1, INPUTTWOONETHIRDVERTICALDOWN
+		bne $t0, 1, INPUTTWOONETHIRDVERTICALUP
+		INPUTTWOONETHIRDVERTICALDOWN:
+			la $t0, P1_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, 7
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)			
+			beq $t5, '1', TESTBORDERTWOONETHIRD
+			bne $t5, '1', TWOONETHIRDELEMENTSECONDDOWN
+			TWOONETHIRDELEMENTSECONDDOWN:
+				addi $t4, $t4, 7
+				lb $t5, 0($t4)
+				beq $t5, '1', TESTBORDERTWOONETHIRD
+				bne $t5, '1', LOOPINPUTTWOONETHIRDVERTICALDOWN
+			
+			LOOPINPUTTWOONETHIRDVERTICALDOWN:
+				beq $t1, $t2, QUITLOOPINPUTTWOONETHIRDVERTICALDOWN
+				sb $t3, 0($t0)
+				addi $t1, $t1, 7
+				addi $t0, $t0, 7
+				j LOOPINPUTTWOONETHIRDVERTICALDOWN
+			QUITLOOPINPUTTWOONETHIRDVERTICALDOWN:
+			j QUITINPUTTWOONETHIRDVERTICAL
+		INPUTTWOONETHIRDVERTICALUP:
+			la $t0, P1_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, -7
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)
+			beq $t5, '1', TESTBORDERTWOONETHIRD
+			bne $t5, '1', TWOONETHIRDELEMENTSECONDUP
+			TWOONETHIRDELEMENTSECONDUP:
+				addi $t4, $t4, -7
+				lb $t5, 0($t4)
+				beq $t5, '1', TESTBORDERTWOONETHIRD
+				bne $t5, '1', LOOPINPUTTWOONETHIRDVERTICALUP
+			
+			LOOPINPUTTWOONETHIRDVERTICALUP:
+				beq $t1, $t2, QUITLOOPINPUTTWOONETHIRDVERTICALUP
+				sb $t3, 0($t0)
+				addi $t1, $t1, -7
+				addi $t0, $t0, -7
+				j LOOPINPUTTWOONETHIRDVERTICALUP
+			QUITLOOPINPUTTWOONETHIRDVERTICALUP:
+			j QUITINPUTTWOONETHIRDVERTICAL
+		QUITINPUTTWOONETHIRDVERTICAL:
+		j QUITINPUTTWOONETHIRD
+	QUITINPUTTWOONETHIRD:
+	
+	la $s0, P1_BOARD
+	jal printBoard	
+			
+	# THIS IS THE INPUT FOR PLAYER 2 BOARD
+	
+	li $v0, 4
+	la $a0, B2_ANNOUNCE
+	syscall
+	la $s0, P2_BOARD
+	jal printBoard
+	BTESTBORDERFOURONE:
+		li $v0, 4
+		la $a0, P2_INPUT_4x1
+		syscall
+		li $v0, 5
+		syscall
+		move $s0, $v0
+		slti $t0, $s0, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s0, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, BTESTBORDERFOURONE
+		li $v0, 5
+		syscall
+		move $s1, $v0
+		slti $t0, $s1, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s1, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, BTESTBORDERFOURONE
+		li $v0, 5
+		syscall
+		move $s2, $v0
+		slti $t0, $s2, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s2, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, BTESTBORDERFOURONE
+		li $v0, 5
+		syscall
+		move $s3, $v0
+		slti $t0, $s3, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s3, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, BTESTBORDERFOURONE
+		beq $s0, $s2, BCHECKFOURONECOL
+		beq $s1, $s3, BCHECKFOURONEROW
+		bne $s0, $s2, BCHECKFOURONEDIAGONALCOL
+		bne $s1, $s3, BCHECKFOURONEDIAGONALROW
+		BCHECKFOURONEDIAGONALCOL:
+			bne $s1, $s3, BTESTBORDERFOURONE
+		BCHECKFOURONEDIAGONALROW:
+			bne $s0, $s2, BTESTBORDERFOURONE
+	BCHECKFOURONECOL:
+		addi $t0, $s1, -3
+		beq $t0, $s3, BVALIDFOURONECHECKCOLANDROW
+		addi $t0, $s1, 3
+		beq $t0, $s3, BVALIDFOURONECHECKCOLANDROW
+		j BTESTBORDERFOURONE
+	BCHECKFOURONEROW:
+		addi $t0, $s0, -3
+		beq $t0, $s2, BVALIDFOURONECHECKCOLANDROW
+		addi $t0, $s0, 3
+		beq $t0, $s2, BVALIDFOURONECHECKCOLANDROW
+		j BTESTBORDERFOURONE
+	BVALIDFOURONECHECKCOLANDROW:
+	
+	beq $s0, $s2, BINPUTFOURONEHORIZONTAL
+	beq $s1, $s3, BINPUTFOURONEVERTICAL
+	BINPUTFOURONEHORIZONTAL:
+		slt $t0, $s1, $s3
+		beq $t0, 1, BINPUTFOURONEHORIZONTALRIGHT
+		bne $t0, 1, BINPUTFOURONEHORIZONTALLEFT
+		BINPUTFOURONEHORIZONTALRIGHT:
+			la $t0, P2_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, 1
+			li $t3, '1'
+			add $t0, $t0, $t1
+			BLOOPINPUTFOURONEHORIZONTALRIGHT:
+				beq $t1, $t2, BQUITLOOPINPUTFOURONEHORIZONTALRIGHT
+				sb $t3, 0($t0)
+				addi $t1, $t1, 1
+				addi $t0, $t0, 1
+				j BLOOPINPUTFOURONEHORIZONTALRIGHT
+			BQUITLOOPINPUTFOURONEHORIZONTALRIGHT:
+			j BQUITINPUTFOURONEHORIZONTAL
+		BINPUTFOURONEHORIZONTALLEFT:
+			la $t0, P2_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, -1
+			li $t3, '1'
+			add $t0, $t0, $t1
+			BLOOPINPUTFOURONEHORIZONTALLEFT:
+				beq $t1, $t2, BQUITLOOPINPUTFOURONEHORIZONTALLEFT
+				sb $t3, 0($t0)
+				addi $t1, $t1, -1
+				addi $t0, $t0, -1
+				j BLOOPINPUTFOURONEHORIZONTALLEFT
+			BQUITLOOPINPUTFOURONEHORIZONTALLEFT:
+			j BQUITINPUTFOURONEHORIZONTAL
+		BQUITINPUTFOURONEHORIZONTAL:
+		j BQUITINPUTFOURONE
+	BINPUTFOURONEVERTICAL:
+		slt $t0, $s0, $s2
+		beq $t0, 1, BINPUTFOURONEVERTICALDOWN
+		bne $t0, 1, BINPUTFOURONEVERTICALUP
+		BINPUTFOURONEVERTICALDOWN:
+			la $t0, P2_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, 7
+			li $t3, '1'
+			add $t0, $t0, $t1
+			BLOOPINPUTFOURONEVERTICALDOWN:
+				beq $t1, $t2, BQUITLOOPINPUTFOURONEVERTICALDOWN
+				sb $t3, 0($t0)
+				addi $t1, $t1, 7
+				addi $t0, $t0, 7
+				j BLOOPINPUTFOURONEVERTICALDOWN
+			BQUITLOOPINPUTFOURONEVERTICALDOWN:
+			j BQUITINPUTFOURONEVERTICAL
+		BINPUTFOURONEVERTICALUP:
+			la $t0, P2_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, -7
+			li $t3, '1'
+			add $t0, $t0, $t1
+			BLOOPINPUTFOURONEVERTICALUP:
+				beq $t1, $t2, BQUITLOOPINPUTFOURONEVERTICALUP
+				sb $t3, 0($t0)
+				addi $t1, $t1, -7
+				addi $t0, $t0, -7
+				j BLOOPINPUTFOURONEVERTICALUP
+			BQUITLOOPINPUTFOURONEVERTICALUP:
+			j BQUITINPUTFOURONEVERTICAL
+		BQUITINPUTFOURONEVERTICAL:
+		j BQUITINPUTFOURONE
+	BQUITINPUTFOURONE:
+	
+	la $s0, P2_BOARD
+	jal printBoard
+	
+	# THIS IS FIRST 3X1 SHIP
+	
+	BTESTBORDERTHREEONEFIRST:
+		li $v0, 4
+		la $a0, P2_INPUT_3x1_1
+		syscall
+		li $v0, 5
+		syscall
+		move $s0, $v0
+		slti $t0, $s0, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s0, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, BTESTBORDERTHREEONEFIRST
+		li $v0, 5
+		syscall
+		move $s1, $v0
+		slti $t0, $s1, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s1, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, BTESTBORDERTHREEONEFIRST
+		li $v0, 5
+		syscall
+		move $s2, $v0
+		slti $t0, $s2, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s2, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, BTESTBORDERTHREEONEFIRST
+		li $v0, 5
+		syscall
+		move $s3, $v0
+		slti $t0, $s3, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s3, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, BTESTBORDERTHREEONEFIRST
+		beq $s0, $s2, BCHECKTHREEONEFIRSTCOL
+		beq $s1, $s3, BCHECKTHREEONEFIRSTROW
+		bne $s0, $s2, BCHECKTHREEONEFIRSTDIAGONALCOL
+		bne $s1, $s3, BCHECKTHREEONEFIRSTDIAGONALROW
+		BCHECKTHREEONEFIRSTDIAGONALCOL:
+			bne $s1, $s3, BTESTBORDERTHREEONEFIRST
+		BCHECKTHREEONEFIRSTDIAGONALROW:
+			bne $s0, $s2, BTESTBORDERTHREEONEFIRST
+	BCHECKTHREEONEFIRSTCOL:
+		addi $t0, $s1, -2
+		beq $t0, $s3, BVALIDTHREEONEFIRSTCHECKCOLANDROW
+		addi $t0, $s1, 2
+		beq $t0, $s3, BVALIDTHREEONEFIRSTCHECKCOLANDROW
+		j BTESTBORDERTHREEONEFIRST
+	BCHECKTHREEONEFIRSTROW:
+		addi $t0, $s0, -2
+		beq $t0, $s2, BVALIDTHREEONEFIRSTCHECKCOLANDROW
+		addi $t0, $s0, 2
+		beq $t0, $s2, BVALIDTHREEONEFIRSTCHECKCOLANDROW
+		j BTESTBORDERTHREEONEFIRST
+	BVALIDTHREEONEFIRSTCHECKCOLANDROW:
+	
+	beq $s0, $s2, BINPUTTHREEONEFIRSTHORIZONTAL
+	beq $s1, $s3, BINPUTTHREEONEFIRSTVERTICAL
+	BINPUTTHREEONEFIRSTHORIZONTAL:
+		slt $t0, $s1, $s3
+		beq $t0, 1, BINPUTTHREEONEFIRSTHORIZONTALRIGHT
+		bne $t0, 1, BINPUTTHREEONEFIRSTHORIZONTALLEFT
+		BINPUTTHREEONEFIRSTHORIZONTALRIGHT:
+			la $t0, P2_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, 1
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)
+			beq $t5, '1', BTESTBORDERTHREEONEFIRST
+			bne $t5, '1', BTHREEONEFIRSTELEMENTSECONDRIGHT
+			BTHREEONEFIRSTELEMENTSECONDRIGHT:
+				addi $t4, $t4, 1
+				lb $t5, 0($t4)
+				beq $t5, '1', BTESTBORDERTHREEONEFIRST
+				bne $t5, '1', BTHREEONEFIRSTELEMENTTHIRDRIGHT
+				BTHREEONEFIRSTELEMENTTHIRDRIGHT:
+					addi $t4, $t4, 1
+					lb $t5, 0($t4)
+					beq $t5, '1', BTESTBORDERTHREEONEFIRST
+					bne $t5, '1', BLOOPINPUTTHREEONEFIRSTHORIZONTALRIGHT
+					
+			BLOOPINPUTTHREEONEFIRSTHORIZONTALRIGHT:
+				beq $t1, $t2, BQUITLOOPINPUTTHREEONEFIRSTHORIZONTALRIGHT
+				sb $t3, 0($t0)
+				addi $t1, $t1, 1
+				addi $t0, $t0, 1
+				j BLOOPINPUTTHREEONEFIRSTHORIZONTALRIGHT
+			BQUITLOOPINPUTTHREEONEFIRSTHORIZONTALRIGHT:
+			j BQUITINPUTTHREEONEFIRSTHORIZONTAL
+		BINPUTTHREEONEFIRSTHORIZONTALLEFT:
+			la $t0, P2_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, -1
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)
+			beq $t5, '1', BTESTBORDERTHREEONEFIRST
+			bne $t5, '1', BTHREEONEFIRSTELEMENTSECONDLEFT
+			BTHREEONEFIRSTELEMENTSECONDLEFT:
+				addi $t4, $t4, -1
+				lb $t5, 0($t4)
+				beq $t5, '1', BTESTBORDERTHREEONEFIRST
+				bne $t5, '1', BTHREEONEFIRSTELEMENTTHIRDLEFT
+				BTHREEONEFIRSTELEMENTTHIRDLEFT:
+					addi $t4, $t4, -1
+					lb $t5, 0($t4)
+					beq $t5, '1', BTESTBORDERTHREEONEFIRST
+					bne $t5, '1', BLOOPINPUTTHREEONEFIRSTHORIZONTALLEFT
+			
+			BLOOPINPUTTHREEONEFIRSTHORIZONTALLEFT:
+				beq $t1, $t2, BQUITLOOPINPUTTHREEONEFIRSTHORIZONTALLEFT
+				sb $t3, 0($t0)
+				addi $t1, $t1, -1
+				addi $t0, $t0, -1
+				j BLOOPINPUTTHREEONEFIRSTHORIZONTALLEFT
+			BQUITLOOPINPUTTHREEONEFIRSTHORIZONTALLEFT:
+			j BQUITINPUTTHREEONEFIRSTHORIZONTAL
+		BQUITINPUTTHREEONEFIRSTHORIZONTAL:
+		j BQUITINPUTTHREEONEFIRST
+	BINPUTTHREEONEFIRSTVERTICAL:
+		slt $t0, $s0, $s2
+		beq $t0, 1, BINPUTTHREEONEFIRSTVERTICALDOWN
+		bne $t0, 1, BINPUTTHREEONEFIRSTVERTICALUP
+		BINPUTTHREEONEFIRSTVERTICALDOWN:
+			la $t0, P2_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, 7
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)			
+			beq $t5, '1', BTESTBORDERTHREEONEFIRST
+			bne $t5, '1', BTHREEONEFIRSTELEMENTSECONDDOWN
+			BTHREEONEFIRSTELEMENTSECONDDOWN:
+				addi $t4, $t4, 7
+				lb $t5, 0($t4)
+				beq $t5, '1', BTESTBORDERTHREEONEFIRST
+				bne $t5, '1', BTHREEONEFIRSTELEMENTTHIRDDOWN
+				BTHREEONEFIRSTELEMENTTHIRDDOWN:
+					addi $t4, $t4, 7
+					lb $t5, 0($t4)
+					beq $t5, '1', BTESTBORDERTHREEONEFIRST
+					bne $t5, '1', BLOOPINPUTTHREEONEFIRSTVERTICALDOWN
+			
+			BLOOPINPUTTHREEONEFIRSTVERTICALDOWN:
+				beq $t1, $t2, BQUITLOOPINPUTTHREEONEFIRSTVERTICALDOWN
+				sb $t3, 0($t0)
+				addi $t1, $t1, 7
+				addi $t0, $t0, 7
+				j BLOOPINPUTTHREEONEFIRSTVERTICALDOWN
+			BQUITLOOPINPUTTHREEONEFIRSTVERTICALDOWN:
+			j BQUITINPUTTHREEONEFIRSTVERTICAL
+		BINPUTTHREEONEFIRSTVERTICALUP:
+			la $t0, P2_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, -7
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)
+			beq $t5, '1', BTESTBORDERTHREEONEFIRST
+			bne $t5, '1', BTHREEONEFIRSTELEMENTSECONDUP
+			BTHREEONEFIRSTELEMENTSECONDUP:
+				addi $t4, $t4, -7
+				lb $t5, 0($t4)
+				beq $t5, '1', BTESTBORDERTHREEONEFIRST
+				bne $t5, '1', BTHREEONEFIRSTELEMENTTHIRDUP
+				BTHREEONEFIRSTELEMENTTHIRDUP:
+					addi $t4, $t4, -7
+					lb $t5, 0($t4)
+					beq $t5, '1', BTESTBORDERTHREEONEFIRST
+					bne $t5, '1', BLOOPINPUTTHREEONEFIRSTVERTICALUP
+			
+			BLOOPINPUTTHREEONEFIRSTVERTICALUP:
+				beq $t1, $t2, BQUITLOOPINPUTTHREEONEFIRSTVERTICALUP
+				sb $t3, 0($t0)
+				addi $t1, $t1, -7
+				addi $t0, $t0, -7
+				j BLOOPINPUTTHREEONEFIRSTVERTICALUP
+			BQUITLOOPINPUTTHREEONEFIRSTVERTICALUP:
+			j BQUITINPUTTHREEONEFIRSTVERTICAL
+		BQUITINPUTTHREEONEFIRSTVERTICAL:
+		j BQUITINPUTTHREEONEFIRST
+	BQUITINPUTTHREEONEFIRST:
+	
+	la $s0, P2_BOARD
+	jal printBoard
+	
+	# THIS IS SECOND 3X1 SHIP
+	
+	BTESTBORDERTHREEONESECOND:
+		li $v0, 4
+		la $a0, P2_INPUT_3x1_2
+		syscall
+		li $v0, 5
+		syscall
+		move $s0, $v0
+		slti $t0, $s0, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s0, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, BTESTBORDERTHREEONESECOND
+		li $v0, 5
+		syscall
+		move $s1, $v0
+		slti $t0, $s1, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s1, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, BTESTBORDERTHREEONESECOND
+		li $v0, 5
+		syscall
+		move $s2, $v0
+		slti $t0, $s2, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s2, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, BTESTBORDERTHREEONESECOND
+		li $v0, 5
+		syscall
+		move $s3, $v0
+		slti $t0, $s3, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s3, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, BTESTBORDERTHREEONESECOND
+		beq $s0, $s2, BCHECKTHREEONESECONDCOL
+		beq $s1, $s3, BCHECKTHREEONESECONDROW
+		bne $s0, $s2, BCHECKTHREEONESECONDDIAGONALCOL
+		bne $s1, $s3, BCHECKTHREEONESECONDDIAGONALROW
+		BCHECKTHREEONESECONDDIAGONALCOL:
+			bne $s1, $s3, BTESTBORDERTHREEONESECOND
+		BCHECKTHREEONESECONDDIAGONALROW:
+			bne $s0, $s2, BTESTBORDERTHREEONESECOND
+	BCHECKTHREEONESECONDCOL:
+		addi $t0, $s1, -2
+		beq $t0, $s3, BVALIDTHREEONESECONDCHECKCOLANDROW
+		addi $t0, $s1, 2
+		beq $t0, $s3, BVALIDTHREEONESECONDCHECKCOLANDROW
+		j BTESTBORDERTHREEONESECOND
+	BCHECKTHREEONESECONDROW:
+		addi $t0, $s0, -2
+		beq $t0, $s2, BVALIDTHREEONESECONDCHECKCOLANDROW
+		addi $t0, $s0, 2
+		beq $t0, $s2, BVALIDTHREEONESECONDCHECKCOLANDROW
+		j BTESTBORDERTHREEONESECOND
+	BVALIDTHREEONESECONDCHECKCOLANDROW:
+	
+	beq $s0, $s2, BINPUTTHREEONESECONDHORIZONTAL
+	beq $s1, $s3, BINPUTTHREEONESECONDVERTICAL
+	BINPUTTHREEONESECONDHORIZONTAL:
+		slt $t0, $s1, $s3
+		beq $t0, 1, BINPUTTHREEONESECONDHORIZONTALRIGHT
+		bne $t0, 1, BINPUTTHREEONESECONDHORIZONTALLEFT
+		BINPUTTHREEONESECONDHORIZONTALRIGHT:
+			la $t0, P2_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, 1
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)
+			beq $t5, '1', BTESTBORDERTHREEONESECOND
+			bne $t5, '1', BTHREEONESECONDELEMENTSECONDRIGHT
+			BTHREEONESECONDELEMENTSECONDRIGHT:
+				addi $t4, $t4, 1
+				lb $t5, 0($t4)
+				beq $t5, '1', BTESTBORDERTHREEONESECOND
+				bne $t5, '1', BTHREEONESECONDELEMENTTHIRDRIGHT
+				BTHREEONESECONDELEMENTTHIRDRIGHT:
+					addi $t4, $t4, 1
+					lb $t5, 0($t4)
+					beq $t5, '1', BTESTBORDERTHREEONESECOND
+					bne $t5, '1', BLOOPINPUTTHREEONESECONDHORIZONTALRIGHT
+					
+			BLOOPINPUTTHREEONESECONDHORIZONTALRIGHT:
+				beq $t1, $t2, BQUITLOOPINPUTTHREEONESECONDHORIZONTALRIGHT
+				sb $t3, 0($t0)
+				addi $t1, $t1, 1
+				addi $t0, $t0, 1
+				j BLOOPINPUTTHREEONESECONDHORIZONTALRIGHT
+			BQUITLOOPINPUTTHREEONESECONDHORIZONTALRIGHT:
+			j BQUITINPUTTHREEONESECONDHORIZONTAL
+		BINPUTTHREEONESECONDHORIZONTALLEFT:
+			la $t0, P2_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, -1
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)
+			beq $t5, '1', BTESTBORDERTHREEONESECOND
+			bne $t5, '1', BTHREEONESECONDELEMENTSECONDLEFT
+			BTHREEONESECONDELEMENTSECONDLEFT:
+				addi $t4, $t4, -1
+				lb $t5, 0($t4)
+				beq $t5, '1', BTESTBORDERTHREEONESECOND
+				bne $t5, '1', BTHREEONESECONDELEMENTTHIRDLEFT
+				BTHREEONESECONDELEMENTTHIRDLEFT:
+					addi $t4, $t4, -1
+					lb $t5, 0($t4)
+					beq $t5, '1', BTESTBORDERTHREEONESECOND
+					bne $t5, '1', BLOOPINPUTTHREEONESECONDHORIZONTALLEFT
+			
+			BLOOPINPUTTHREEONESECONDHORIZONTALLEFT:
+				beq $t1, $t2, BQUITLOOPINPUTTHREEONESECONDHORIZONTALLEFT
+				sb $t3, 0($t0)
+				addi $t1, $t1, -1
+				addi $t0, $t0, -1
+				j BLOOPINPUTTHREEONESECONDHORIZONTALLEFT
+			BQUITLOOPINPUTTHREEONESECONDHORIZONTALLEFT:
+			j BQUITINPUTTHREEONESECONDHORIZONTAL
+		BQUITINPUTTHREEONESECONDHORIZONTAL:
+		j BQUITINPUTTHREEONESECOND
+	BINPUTTHREEONESECONDVERTICAL:
+		slt $t0, $s0, $s2
+		beq $t0, 1, BINPUTTHREEONESECONDVERTICALDOWN
+		bne $t0, 1, BINPUTTHREEONESECONDVERTICALUP
+		BINPUTTHREEONESECONDVERTICALDOWN:
+			la $t0, P2_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, 7
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)			
+			beq $t5, '1', BTESTBORDERTHREEONESECOND
+			bne $t5, '1', BTHREEONESECONDELEMENTSECONDDOWN
+			BTHREEONESECONDELEMENTSECONDDOWN:
+				addi $t4, $t4, 7
+				lb $t5, 0($t4)
+				beq $t5, '1', BTESTBORDERTHREEONESECOND
+				bne $t5, '1', BTHREEONESECONDELEMENTTHIRDDOWN
+				BTHREEONESECONDELEMENTTHIRDDOWN:
+					addi $t4, $t4, 7
+					lb $t5, 0($t4)
+					beq $t5, '1', BTESTBORDERTHREEONESECOND
+					bne $t5, '1', BLOOPINPUTTHREEONESECONDVERTICALDOWN
+			
+			BLOOPINPUTTHREEONESECONDVERTICALDOWN:
+				beq $t1, $t2, BQUITLOOPINPUTTHREEONESECONDVERTICALDOWN
+				sb $t3, 0($t0)
+				addi $t1, $t1, 7
+				addi $t0, $t0, 7
+				j BLOOPINPUTTHREEONESECONDVERTICALDOWN
+			BQUITLOOPINPUTTHREEONESECONDVERTICALDOWN:
+			j BQUITINPUTTHREEONESECONDVERTICAL
+		BINPUTTHREEONESECONDVERTICALUP:
+			la $t0, P2_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, -7
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)
+			beq $t5, '1', BTESTBORDERTHREEONESECOND
+			bne $t5, '1', BTHREEONESECONDELEMENTSECONDUP
+			BTHREEONESECONDELEMENTSECONDUP:
+				addi $t4, $t4, -7
+				lb $t5, 0($t4)
+				beq $t5, '1', BTESTBORDERTHREEONESECOND
+				bne $t5, '1', BTHREEONESECONDELEMENTTHIRDUP
+				BTHREEONESECONDELEMENTTHIRDUP:
+					addi $t4, $t4, -7
+					lb $t5, 0($t4)
+					beq $t5, '1', BTESTBORDERTHREEONESECOND
+					bne $t5, '1', BLOOPINPUTTHREEONESECONDVERTICALUP
+			
+			BLOOPINPUTTHREEONESECONDVERTICALUP:
+				beq $t1, $t2, BQUITLOOPINPUTTHREEONESECONDVERTICALUP
+				sb $t3, 0($t0)
+				addi $t1, $t1, -7
+				addi $t0, $t0, -7
+				j BLOOPINPUTTHREEONESECONDVERTICALUP
+			BQUITLOOPINPUTTHREEONESECONDVERTICALUP:
+			j BQUITINPUTTHREEONESECONDVERTICAL
+		BQUITINPUTTHREEONESECONDVERTICAL:
+		j BQUITINPUTTHREEONESECOND
+	BQUITINPUTTHREEONESECOND:
+	
+	la $s0, P2_BOARD
+	jal printBoard
+	
+	# THIS IS THE FIRST 2X1 SHIP
+	
+	BTESTBORDERTWOONEFIRST:
+		li $v0, 4
+		la $a0, P2_INPUT_2x1_1
+		syscall
+		li $v0, 5
+		syscall
+		move $s0, $v0
+		slti $t0, $s0, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s0, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, BTESTBORDERTWOONEFIRST
+		li $v0, 5
+		syscall
+		move $s1, $v0
+		slti $t0, $s1, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s1, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, BTESTBORDERTWOONEFIRST
+		li $v0, 5
+		syscall
+		move $s2, $v0
+		slti $t0, $s2, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s2, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, BTESTBORDERTWOONEFIRST
+		li $v0, 5
+		syscall
+		move $s3, $v0
+		slti $t0, $s3, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s3, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, BTESTBORDERTWOONEFIRST
+		beq $s0, $s2, BCHECKTWOONEFIRSTCOL
+		beq $s1, $s3, BCHECKTWOONEFIRSTROW
+		bne $s0, $s2, BCHECKTWOONEFIRSTDIAGONALCOL
+		bne $s1, $s3, BCHECKTWOONEFIRSTDIAGONALROW
+		BCHECKTWOONEFIRSTDIAGONALCOL:
+			bne $s1, $s3, BTESTBORDERTWOONEFIRST
+		BCHECKTWOONEFIRSTDIAGONALROW:
+			bne $s0, $s2, BTESTBORDERTWOONEFIRST
+	BCHECKTWOONEFIRSTCOL:
+		addi $t0, $s1, -1
+		beq $t0, $s3, BVALIDTWOONEFIRSTCHECKCOLANDROW
+		addi $t0, $s1, 1
+		beq $t0, $s3, BVALIDTWOONEFIRSTCHECKCOLANDROW
+		j BTESTBORDERTWOONEFIRST
+	BCHECKTWOONEFIRSTROW:
+		addi $t0, $s0, -1
+		beq $t0, $s2, BVALIDTWOONEFIRSTCHECKCOLANDROW
+		addi $t0, $s0, 1
+		beq $t0, $s2, BVALIDTWOONEFIRSTCHECKCOLANDROW
+		j BTESTBORDERTWOONEFIRST
+	BVALIDTWOONEFIRSTCHECKCOLANDROW:
+	
+	beq $s0, $s2, BINPUTTWOONEFIRSTHORIZONTAL
+	beq $s1, $s3, BINPUTTWOONEFIRSTVERTICAL
+	BINPUTTWOONEFIRSTHORIZONTAL:
+		slt $t0, $s1, $s3
+		beq $t0, 1, BINPUTTWOONEFIRSTHORIZONTALRIGHT
+		bne $t0, 1, BINPUTTWOONEFIRSTHORIZONTALLEFT
+		BINPUTTWOONEFIRSTHORIZONTALRIGHT:
+			la $t0, P2_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, 1
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)
+			beq $t5, '1', BTESTBORDERTWOONEFIRST
+			bne $t5, '1', BTWOONEFIRSTELEMENTSECONDRIGHT
+			BTWOONEFIRSTELEMENTSECONDRIGHT:
+				addi $t4, $t4, 1
+				lb $t5, 0($t4)
+				beq $t5, '1', BTESTBORDERTWOONEFIRST
+				bne $t5, '1', BLOOPINPUTTWOONEFIRSTHORIZONTALRIGHT
+					
+			BLOOPINPUTTWOONEFIRSTHORIZONTALRIGHT:
+				beq $t1, $t2, BQUITLOOPINPUTTWOONEFIRSTHORIZONTALRIGHT
+				sb $t3, 0($t0)
+				addi $t1, $t1, 1
+				addi $t0, $t0, 1
+				j BLOOPINPUTTWOONEFIRSTHORIZONTALRIGHT
+			BQUITLOOPINPUTTWOONEFIRSTHORIZONTALRIGHT:
+			j BQUITINPUTTWOONEFIRSTHORIZONTAL
+		BINPUTTWOONEFIRSTHORIZONTALLEFT:
+			la $t0, P2_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, -1
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)
+			beq $t5, '1', BTESTBORDERTWOONEFIRST
+			bne $t5, '1', BTWOONEFIRSTELEMENTSECONDLEFT
+			BTWOONEFIRSTELEMENTSECONDLEFT:
+				addi $t4, $t4, -1
+				lb $t5, 0($t4)
+				beq $t5, '1', BTESTBORDERTWOONEFIRST
+				bne $t5, '1', BLOOPINPUTTWOONEFIRSTHORIZONTALLEFT
+			
+			BLOOPINPUTTWOONEFIRSTHORIZONTALLEFT:
+				beq $t1, $t2, BQUITLOOPINPUTTWOONEFIRSTHORIZONTALLEFT
+				sb $t3, 0($t0)
+				addi $t1, $t1, -1
+				addi $t0, $t0, -1
+				j BLOOPINPUTTWOONEFIRSTHORIZONTALLEFT
+			BQUITLOOPINPUTTWOONEFIRSTHORIZONTALLEFT:
+			j BQUITINPUTTWOONEFIRSTHORIZONTAL
+		BQUITINPUTTWOONEFIRSTHORIZONTAL:
+		j BQUITINPUTTWOONEFIRST
+	BINPUTTWOONEFIRSTVERTICAL:
+		slt $t0, $s0, $s2
+		beq $t0, 1, BINPUTTWOONEFIRSTVERTICALDOWN
+		bne $t0, 1, BINPUTTWOONEFIRSTVERTICALUP
+		BINPUTTWOONEFIRSTVERTICALDOWN:
+			la $t0, P2_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, 7
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)			
+			beq $t5, '1', BTESTBORDERTWOONEFIRST
+			bne $t5, '1', BTWOONEFIRSTELEMENTSECONDDOWN
+			BTWOONEFIRSTELEMENTSECONDDOWN:
+				addi $t4, $t4, 7
+				lb $t5, 0($t4)
+				beq $t5, '1', BTESTBORDERTWOONEFIRST
+				bne $t5, '1', BLOOPINPUTTWOONEFIRSTVERTICALDOWN
+			
+			BLOOPINPUTTWOONEFIRSTVERTICALDOWN:
+				beq $t1, $t2, BQUITLOOPINPUTTWOONEFIRSTVERTICALDOWN
+				sb $t3, 0($t0)
+				addi $t1, $t1, 7
+				addi $t0, $t0, 7
+				j BLOOPINPUTTWOONEFIRSTVERTICALDOWN
+			BQUITLOOPINPUTTWOONEFIRSTVERTICALDOWN:
+			j BQUITINPUTTWOONEFIRSTVERTICAL
+		BINPUTTWOONEFIRSTVERTICALUP:
+			la $t0, P2_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, -7
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)
+			beq $t5, '1', BTESTBORDERTWOONEFIRST
+			bne $t5, '1', BTWOONEFIRSTELEMENTSECONDUP
+			BTWOONEFIRSTELEMENTSECONDUP:
+				addi $t4, $t4, -7
+				lb $t5, 0($t4)
+				beq $t5, '1', BTESTBORDERTWOONEFIRST
+				bne $t5, '1', BLOOPINPUTTWOONEFIRSTVERTICALUP
+			
+			BLOOPINPUTTWOONEFIRSTVERTICALUP:
+				beq $t1, $t2, BQUITLOOPINPUTTWOONEFIRSTVERTICALUP
+				sb $t3, 0($t0)
+				addi $t1, $t1, -7
+				addi $t0, $t0, -7
+				j BLOOPINPUTTWOONEFIRSTVERTICALUP
+			BQUITLOOPINPUTTWOONEFIRSTVERTICALUP:
+			j BQUITINPUTTWOONEFIRSTVERTICAL
+		BQUITINPUTTWOONEFIRSTVERTICAL:
+		j BQUITINPUTTWOONEFIRST
+	BQUITINPUTTWOONEFIRST:
+	
+	la $s0, P2_BOARD
+	jal printBoard
+			
+	# THIS IS THE SECOND 2X1 SHIP
+	
+	BTESTBORDERTWOONESECOND:
+		li $v0, 4
+		la $a0, P2_INPUT_2x1_2
+		syscall
+		li $v0, 5
+		syscall
+		move $s0, $v0
+		slti $t0, $s0, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s0, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, BTESTBORDERTWOONESECOND
+		li $v0, 5
+		syscall
+		move $s1, $v0
+		slti $t0, $s1, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s1, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, BTESTBORDERTWOONESECOND
+		li $v0, 5
+		syscall
+		move $s2, $v0
+		slti $t0, $s2, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s2, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, BTESTBORDERTWOONESECOND
+		li $v0, 5
+		syscall
+		move $s3, $v0
+		slti $t0, $s3, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s3, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, BTESTBORDERTWOONESECOND
+		beq $s0, $s2, BCHECKTWOONESECONDCOL
+		beq $s1, $s3, BCHECKTWOONESECONDROW
+		bne $s0, $s2, BCHECKTWOONESECONDDIAGONALCOL
+		bne $s1, $s3, BCHECKTWOONESECONDDIAGONALROW
+		BCHECKTWOONESECONDDIAGONALCOL:
+			bne $s1, $s3, TESTBORDERTWOONESECOND
+		BCHECKTWOONESECONDDIAGONALROW:
+			bne $s0, $s2, TESTBORDERTWOONESECOND
+	BCHECKTWOONESECONDCOL:
+		addi $t0, $s1, -1
+		beq $t0, $s3, BVALIDTWOONESECONDCHECKCOLANDROW
+		addi $t0, $s1, 1
+		beq $t0, $s3, BVALIDTWOONESECONDCHECKCOLANDROW
+		j BTESTBORDERTWOONESECOND
+	BCHECKTWOONESECONDROW:
+		addi $t0, $s0, -1
+		beq $t0, $s2, BVALIDTWOONESECONDCHECKCOLANDROW
+		addi $t0, $s0, 1
+		beq $t0, $s2, BVALIDTWOONESECONDCHECKCOLANDROW
+		j BTESTBORDERTWOONESECOND
+	BVALIDTWOONESECONDCHECKCOLANDROW:
+	
+	beq $s0, $s2, BINPUTTWOONESECONDHORIZONTAL
+	beq $s1, $s3, BINPUTTWOONESECONDVERTICAL
+	BINPUTTWOONESECONDHORIZONTAL:
+		slt $t0, $s1, $s3
+		beq $t0, 1, BINPUTTWOONESECONDHORIZONTALRIGHT
+		bne $t0, 1, BINPUTTWOONESECONDHORIZONTALLEFT
+		BINPUTTWOONESECONDHORIZONTALRIGHT:
+			la $t0, P2_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, 1
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)
+			beq $t5, '1', BTESTBORDERTWOONESECOND
+			bne $t5, '1', BTWOONESECONDELEMENTSECONDRIGHT
+			BTWOONESECONDELEMENTSECONDRIGHT:
+				addi $t4, $t4, 1
+				lb $t5, 0($t4)
+				beq $t5, '1', BTESTBORDERTWOONESECOND
+				bne $t5, '1', BLOOPINPUTTWOONESECONDHORIZONTALRIGHT
+					
+			BLOOPINPUTTWOONESECONDHORIZONTALRIGHT:
+				beq $t1, $t2, BQUITLOOPINPUTTWOONESECONDHORIZONTALRIGHT
+				sb $t3, 0($t0)
+				addi $t1, $t1, 1
+				addi $t0, $t0, 1
+				j BLOOPINPUTTWOONESECONDHORIZONTALRIGHT
+			BQUITLOOPINPUTTWOONESECONDHORIZONTALRIGHT:
+			j BQUITINPUTTWOONESECONDHORIZONTAL
+		BINPUTTWOONESECONDHORIZONTALLEFT:
+			la $t0, P2_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, -1
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)
+			beq $t5, '1', BTESTBORDERTWOONESECOND
+			bne $t5, '1', BTWOONESECONDELEMENTSECONDLEFT
+			BTWOONESECONDELEMENTSECONDLEFT:
+				addi $t4, $t4, -1
+				lb $t5, 0($t4)
+				beq $t5, '1', BTESTBORDERTWOONESECOND
+				bne $t5, '1', BLOOPINPUTTWOONESECONDHORIZONTALLEFT
+			
+			BLOOPINPUTTWOONESECONDHORIZONTALLEFT:
+				beq $t1, $t2, BQUITLOOPINPUTTWOONESECONDHORIZONTALLEFT
+				sb $t3, 0($t0)
+				addi $t1, $t1, -1
+				addi $t0, $t0, -1
+				j BLOOPINPUTTWOONESECONDHORIZONTALLEFT
+			BQUITLOOPINPUTTWOONESECONDHORIZONTALLEFT:
+			j BQUITINPUTTWOONESECONDHORIZONTAL
+		BQUITINPUTTWOONESECONDHORIZONTAL:
+		j BQUITINPUTTWOONESECOND
+	BINPUTTWOONESECONDVERTICAL:
+		slt $t0, $s0, $s2
+		beq $t0, 1, BINPUTTWOONESECONDVERTICALDOWN
+		bne $t0, 1, BINPUTTWOONESECONDVERTICALUP
+		BINPUTTWOONESECONDVERTICALDOWN:
+			la $t0, P2_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, 7
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)			
+			beq $t5, '1', BTESTBORDERTWOONESECOND
+			bne $t5, '1', BTWOONESECONDELEMENTSECONDDOWN
+			BTWOONESECONDELEMENTSECONDDOWN:
+				addi $t4, $t4, 7
+				lb $t5, 0($t4)
+				beq $t5, '1', BTESTBORDERTWOONESECOND
+				bne $t5, '1', BLOOPINPUTTWOONESECONDVERTICALDOWN
+			
+			BLOOPINPUTTWOONESECONDVERTICALDOWN:
+				beq $t1, $t2, BQUITLOOPINPUTTWOONESECONDVERTICALDOWN
+				sb $t3, 0($t0)
+				addi $t1, $t1, 7
+				addi $t0, $t0, 7
+				j BLOOPINPUTTWOONESECONDVERTICALDOWN
+			BQUITLOOPINPUTTWOONESECONDVERTICALDOWN:
+			j BQUITINPUTTWOONESECONDVERTICAL
+		BINPUTTWOONESECONDVERTICALUP:
+			la $t0, P2_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, -7
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)
+			beq $t5, '1', BTESTBORDERTWOONESECOND
+			bne $t5, '1', BTWOONESECONDELEMENTSECONDUP
+			BTWOONESECONDELEMENTSECONDUP:
+				addi $t4, $t4, -7
+				lb $t5, 0($t4)
+				beq $t5, '1', BTESTBORDERTWOONESECOND
+				bne $t5, '1', BLOOPINPUTTWOONESECONDVERTICALUP
+			
+			BLOOPINPUTTWOONESECONDVERTICALUP:
+				beq $t1, $t2, BQUITLOOPINPUTTWOONESECONDVERTICALUP
+				sb $t3, 0($t0)
+				addi $t1, $t1, -7
+				addi $t0, $t0, -7
+				j BLOOPINPUTTWOONESECONDVERTICALUP
+			BQUITLOOPINPUTTWOONESECONDVERTICALUP:
+			j BQUITINPUTTWOONESECONDVERTICAL
+		BQUITINPUTTWOONESECONDVERTICAL:
+		j BQUITINPUTTWOONESECOND
+	BQUITINPUTTWOONESECOND:
+	
+	la $s0, P2_BOARD
+	jal printBoard	
+		
+	# THIS IS THE THIRD 2X1 SHIP
+	
+	BTESTBORDERTWOONETHIRD:
+		li $v0, 4
+		la $a0, P2_INPUT_2x1_3
+		syscall
+		li $v0, 5
+		syscall
+		move $s0, $v0
+		slti $t0, $s0, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s0, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, BTESTBORDERTWOONETHIRD
+		li $v0, 5
+		syscall
+		move $s1, $v0
+		slti $t0, $s1, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s1, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, BTESTBORDERTWOONETHIRD
+		li $v0, 5
+		syscall
+		move $s2, $v0
+		slti $t0, $s2, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s2, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, BTESTBORDERTWOONETHIRD
+		li $v0, 5
+		syscall
+		move $s3, $v0
+		slti $t0, $s3, 7
+		xori $t0, $t0, 0x1 
+		slti $t1, $s3, 0
+		or $t2, $t0, $t1
+		beq $t2, 1, BTESTBORDERTWOONETHIRD
+		beq $s0, $s2, BCHECKTWOONETHIRDCOL
+		beq $s1, $s3, BCHECKTWOONETHIRDROW
+		bne $s0, $s2, BCHECKTWOONETHIRDDIAGONALCOL
+		bne $s1, $s3, BCHECKTWOONETHIRDDIAGONALROW
+		BCHECKTWOONETHIRDDIAGONALCOL:
+			bne $s1, $s3, BTESTBORDERTWOONETHIRD
+		BCHECKTWOONETHIRDDIAGONALROW:
+			bne $s0, $s2, BTESTBORDERTWOONETHIRD
+	BCHECKTWOONETHIRDCOL:
+		addi $t0, $s1, -1
+		beq $t0, $s3, BVALIDTWOONETHIRDCHECKCOLANDROW
+		addi $t0, $s1, 1
+		beq $t0, $s3, BVALIDTWOONETHIRDCHECKCOLANDROW
+		j BTESTBORDERTWOONETHIRD
+	BCHECKTWOONETHIRDROW:
+		addi $t0, $s0, -1
+		beq $t0, $s2, BVALIDTWOONETHIRDCHECKCOLANDROW
+		addi $t0, $s0, 1
+		beq $t0, $s2, BVALIDTWOONETHIRDCHECKCOLANDROW
+		j BTESTBORDERTWOONETHIRD
+	BVALIDTWOONETHIRDCHECKCOLANDROW:
+	
+	beq $s0, $s2, BINPUTTWOONETHIRDHORIZONTAL
+	beq $s1, $s3, BINPUTTWOONETHIRDVERTICAL
+	BINPUTTWOONETHIRDHORIZONTAL:
+		slt $t0, $s1, $s3
+		beq $t0, 1, BINPUTTWOONETHIRDHORIZONTALRIGHT
+		bne $t0, 1, BINPUTTWOONETHIRDHORIZONTALLEFT
+		BINPUTTWOONETHIRDHORIZONTALRIGHT:
+			la $t0, P2_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, 1
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)
+			beq $t5, '1', BTESTBORDERTWOONETHIRD
+			bne $t5, '1', BTWOONETHIRDELEMENTSECONDRIGHT
+			BTWOONETHIRDELEMENTSECONDRIGHT:
+				addi $t4, $t4, 1
+				lb $t5, 0($t4)
+				beq $t5, '1', BTESTBORDERTWOONETHIRD
+				bne $t5, '1', BLOOPINPUTTWOONETHIRDHORIZONTALRIGHT
+					
+			BLOOPINPUTTWOONETHIRDHORIZONTALRIGHT:
+				beq $t1, $t2, BQUITLOOPINPUTTWOONETHIRDHORIZONTALRIGHT
+				sb $t3, 0($t0)
+				addi $t1, $t1, 1
+				addi $t0, $t0, 1
+				j BLOOPINPUTTWOONETHIRDHORIZONTALRIGHT
+			BQUITLOOPINPUTTWOONETHIRDHORIZONTALRIGHT:
+			j BQUITINPUTTWOONETHIRDHORIZONTAL
+		BINPUTTWOONETHIRDHORIZONTALLEFT:
+			la $t0, P2_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, -1
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)
+			beq $t5, '1', BTESTBORDERTWOONETHIRD
+			bne $t5, '1', BTWOONETHIRDELEMENTSECONDLEFT
+			BTWOONETHIRDELEMENTSECONDLEFT:
+				addi $t4, $t4, -1
+				lb $t5, 0($t4)
+				beq $t5, '1', BTESTBORDERTWOONETHIRD
+				bne $t5, '1', BLOOPINPUTTWOONETHIRDHORIZONTALLEFT
+			
+			BLOOPINPUTTWOONETHIRDHORIZONTALLEFT:
+				beq $t1, $t2, BQUITLOOPINPUTTWOONETHIRDHORIZONTALLEFT
+				sb $t3, 0($t0)
+				addi $t1, $t1, -1
+				addi $t0, $t0, -1
+				j BLOOPINPUTTWOONETHIRDHORIZONTALLEFT
+			BQUITLOOPINPUTTWOONETHIRDHORIZONTALLEFT:
+			j BQUITINPUTTWOONETHIRDHORIZONTAL
+		BQUITINPUTTWOONETHIRDHORIZONTAL:
+		j BQUITINPUTTWOONETHIRD
+	BINPUTTWOONETHIRDVERTICAL:
+		slt $t0, $s0, $s2
+		beq $t0, 1, BINPUTTWOONETHIRDVERTICALDOWN
+		bne $t0, 1, BINPUTTWOONETHIRDVERTICALUP
+		BINPUTTWOONETHIRDVERTICALDOWN:
+			la $t0, P2_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, 7
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)			
+			beq $t5, '1', BTESTBORDERTWOONETHIRD
+			bne $t5, '1', BTWOONETHIRDELEMENTSECONDDOWN
+			BTWOONETHIRDELEMENTSECONDDOWN:
+				addi $t4, $t4, 7
+				lb $t5, 0($t4)
+				beq $t5, '1', BTESTBORDERTWOONETHIRD
+				bne $t5, '1', BLOOPINPUTTWOONETHIRDVERTICALDOWN
+			
+			BLOOPINPUTTWOONETHIRDVERTICALDOWN:
+				beq $t1, $t2, BQUITLOOPINPUTTWOONETHIRDVERTICALDOWN
+				sb $t3, 0($t0)
+				addi $t1, $t1, 7
+				addi $t0, $t0, 7
+				j BLOOPINPUTTWOONETHIRDVERTICALDOWN
+			BQUITLOOPINPUTTWOONETHIRDVERTICALDOWN:
+			j BQUITINPUTTWOONETHIRDVERTICAL
+		BINPUTTWOONETHIRDVERTICALUP:
+			la $t0, P2_BOARD
+			mul $t1, $s0, 7
+			add $t1, $t1, $s1
+			mul $t2, $s2, 7
+			add $t2, $t2, $s3
+			add $t2, $t2, -7
+			li $t3, '1'
+			add $t0, $t0, $t1
+			
+			move $t4, $t0
+			lb $t5, 0($t4)
+			beq $t5, '1', BTESTBORDERTWOONETHIRD
+			bne $t5, '1', BTWOONETHIRDELEMENTSECONDUP
+			BTWOONETHIRDELEMENTSECONDUP:
+				addi $t4, $t4, -7
+				lb $t5, 0($t4)
+				beq $t5, '1', BTESTBORDERTWOONETHIRD
+				bne $t5, '1', BLOOPINPUTTWOONETHIRDVERTICALUP
+			
+			BLOOPINPUTTWOONETHIRDVERTICALUP:
+				beq $t1, $t2, BQUITLOOPINPUTTWOONETHIRDVERTICALUP
+				sb $t3, 0($t0)
+				addi $t1, $t1, -7
+				addi $t0, $t0, -7
+				j BLOOPINPUTTWOONETHIRDVERTICALUP
+			BQUITLOOPINPUTTWOONETHIRDVERTICALUP:
+			j BQUITINPUTTWOONETHIRDVERTICAL
+		BQUITINPUTTWOONETHIRDVERTICAL:
+		j BQUITINPUTTWOONETHIRD
+	BQUITINPUTTWOONETHIRD:
+	
+	la $s0, P2_BOARD
+	jal printBoard	
+	
+	li $t6, '0'
+	
+	PLAYGAME:
+		PLAYERONEATTACK:
+			li $v0, 4
+			la $a0, P1_ATTACK
+			syscall
+			li $v0, 5
+			syscall
+			move $s2, $v0
+			slti $t0, $s2, 7
+			xori $t0, $t0, 0x1 
+			slti $t1, $s2, 0
+			or $t2, $t0, $t1
+			beq $t2, 1, PLAYERONEATTACK
+			li $v0, 5
+			syscall
+			move $s3, $v0
+			slti $t0, $s3, 7
+			xori $t0, $t0, 0x1 
+			slti $t1, $s3, 0
+			or $t2, $t0, $t1
+			beq $t2, 1, PLAYERONEATTACK
+			
+			mul $t0, $s2, 7
+			add $t0, $t0, $s3
+			la $s4, P2_BOARD
+			add $s4, $s4, $t0
+			lb $t1, 0($s4)
+			beq $t1, '1', PLAYERTWOSHIPHIT
+			bne $t1, '1', PLAYERTWOSHIPMISSED
+			PLAYERTWOSHIPHIT:
+				li $v0, 4
+				la $a0, HIT
+				syscall
+				sb $t6, 0($s4)
+				la $s0, P2_BOARD
+				jal printBoard
+				la $s0, P2_BOARD
+				jal checkBoard
+				move $t4, $v0
+				beq $t4, 1, PLAYERONEWINS
+			PLAYERTWOSHIPMISSED:
+			
+		PLAYERTWOATTACK:
+			li $v0, 4
+			la $a0, P2_ATTACK
+			syscall
+			li $v0, 5
+			syscall
+			move $s2, $v0
+			slti $t0, $s2, 7
+			xori $t0, $t0, 0x1 
+			slti $t1, $s2, 0
+			or $t2, $t0, $t1
+			beq $t2, 1, PLAYERTWOATTACK
+			li $v0, 5
+			syscall
+			move $s3, $v0
+			slti $t0, $s3, 7
+			xori $t0, $t0, 0x1 
+			slti $t1, $s3, 0
+			or $t2, $t0, $t1
+			beq $t2, 1, PLAYERTWOATTACK
+			
+			mul $t0, $s2, 7
+			add $t0, $t0, $s3
+			la $s4, P1_BOARD
+			add $s4, $s4, $t0
+			lb $t1, 0($s4)
+			beq $t1, '1', PLAYERONESHIPHIT
+			bne $t1, '1', PLAYERONESHIPMISSED
+			PLAYERONESHIPHIT:
+				li $v0, 4
+				la $a0, HIT
+				syscall
+				sb $t6, 0($s4)
+				la $s0, P1_BOARD
+				jal printBoard
+				la $s0, P1_BOARD
+				jal checkBoard
+				move $t3, $v0
+				beq $t3, 1, PLAYERTWOWINS
+			PLAYERONESHIPMISSED:
+		j PLAYGAME
+	
+	PLAYERTWOWINS:
+		li $v0, 4
+		la $a0, P2_WIN
+		syscall
+		j EXITGAME
+	PLAYERONEWINS: 
+		li $v0, 4
+		la $a0, P1_WIN
+		syscall
+		j EXITGAME
+	EXITGAME:
+	
+	li $v0, 10
+	syscall
+	
+	checkBoard:
+		addi $sp, $sp, -12
+		sw $t1, 8($sp)
+		sw $t2, 4($sp)
+		sw $t3, 0($sp)
+		addi $t1, $zero, 0
+		addi $t2, $zero, -1
+		addi $t3, $zero, 1
+		CHECKWINNER:
+			beq $t2, 49, QUITCHECKWINNER
+			beq $t1, '1', TURNZERO
+			bne $t1, '1', KEEPCHECKING
+			TURNZERO:
+				addi $t3, $t3, -1
+				j QUITCHECKWINNER
+			KEEPCHECKING:
+			lb $t1, 0($s0)
+			addi $t2, $t2, 1
+			addi $s0, $s0, 1
+			j CHECKWINNER
+		QUITCHECKWINNER:
+		addi $v0, $t3, 0
+		lw $t3, 0($sp)
+		lw $t2, 4($sp)
+		lw $t1, 8($sp)
+		addi $sp, $sp, 12
+		jr $ra
+		
+	printBoard:
+		addi $sp, $sp, -16
+		sw $s0, 12($sp)
+		sw $t2, 8($sp)
+		sw $t0, 4($sp)
+		sw $t1, 0($sp)
+		addi $t0, $zero, 0
+		addi $t2, $zero, 0
+		PBL:
+			beq $t0, 49, QPBL
+			beq $t2, 7, LINE
+			bne $t2, 7, EXITLINE
+			LINE:
+				li $v0, 4
+				la $a0, GETLINE
+				syscall
+				addi $t2, $zero, 0
+				j EXITLINE
+			EXITLINE:
+			lb $t1, 0($s0)
+			li $v0, 11
+			move $a0, $t1
+			syscall
+			addi $t0, $t0, 1
+			addi $t2, $t2, 1
+			addi $s0, $s0, 1
+			j PBL
+		QPBL: 
+		lw $t1, 0($sp)
+		lw $t0, 4($sp)
+		lw $t2, 8($sp)
+		lw $s0, 12($sp)
+		addi $sp, $sp, 16
+		jr $ra
+		
+		
+	
+	
+	
+	
+	
+	
+	
