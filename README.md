@@ -81,7 +81,7 @@ The `.data` section of the assembly code includes:
 
 ## Report and Additional Explanation
 
-A detailed report (see [Assignment_Report.pdf](https://example.com)) provides further insight into the design and implementation of this Battleship game. Key points from the report include:
+A detailed report (see [Assignment_Report.pdf](https://github.com/NamTruong1610/Battleship-MARS-MIPS/blob/main/Battleship/Assignment_Report.pdf)) provides further insight into the design and implementation of this Battleship game. Key points from the report include:
 
 - **Algorithmic Approach:**  
   The report explains how the validity of ship placement is determined by checking both the numerical bounds and the geometric constraints (horizontal/vertical alignment and correct length).  
@@ -107,7 +107,7 @@ The assignment was evaluated based on:
 ## References
 
 - [Wikipedia - Battleship (game)](https://en.wikipedia.org/wiki/Battleship_(game))
-- [Assignment Report](https://example.com) – Detailed explanation of the algorithm and code implementation (see [49] [oai_citation:0‡Assignment_Report.pdf](file-service://file-Dwf18x3CBAAUaDSBjFaFvW)).
+- [Assignment Report](https://github.com/NamTruong1610/Battleship-MARS-MIPS/blob/main/Battleship/Assignment_Report.pdf) – Detailed explanation of the algorithm and code implementation (see [49] [oai_citation:0‡Assignment_Report.pdf](file-service://file-Dwf18x3CBAAUaDSBjFaFvW)).
 
 ---
 
